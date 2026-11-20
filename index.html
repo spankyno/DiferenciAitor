@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#020617" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/icon-192.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <!-- Aplica el tema antes de pintar (evita el parpadeo). Archivo externo por la CSP. -->
+    <script src="/theme-init.js"></script>
+    <title>DiferenciAItor — Comparador avanzado de textos, archivos y carpetas</title>
+    <meta name="description" content="Herramienta 100% client-side para comparar diferencias entre textos, archivos y carpetas con total privacidad y sin salir del navegador." />
+    
+    <!-- Open Graph / Social Sharing Cards -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="DiferenciAItor — Comparador avanzado de textos, archivos y carpetas" />
+    <meta property="og:description" content="Herramienta 100% client-side para comparar diferencias entre textos, archivos y carpetas con total privacidad y sin salir del navegador." />
+    <meta property="og:image" content="/og-image.png" />
+    <meta property="og:site_name" content="DiferenciAItor" />
+
+    <!-- Twitter / X Cards -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="DiferenciAItor — Comparador avanzado de textos, archivos y carpetas" />
+    <meta name="twitter:description" content="Herramienta 100% client-side para comparar diferencias entre textos, archivos y carpetas con total privacidad y sin salir del navegador." />
+    <meta name="twitter:image" content="/og-image.png" />
+
+    <!-- Schema.org Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "DiferenciAItor",
+      "applicationCategory": "DeveloperApplication",
+      "operatingSystem": "All",
+      "description": "Herramienta 100% client-side para comparar diferencias entre textos, archivos y carpetas con total privacidad y sin salir del navegador.",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "EUR"
+      }
+    }
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
