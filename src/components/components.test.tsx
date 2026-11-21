@@ -108,8 +108,108 @@ describe('App', () => {
   it('muestra "Acerca de" desde el pie', async () => {
     const user = userEvent.setup();
     renderApp();
-    await user.click(screen.getByRole('button', { name: 'Acerca de' }));
+    await user.click(screen.getByRole('link', { name: 'Acerca de' }));
     expect(await screen.findByText('Acerca de DiferenciAItor')).toBeInTheDocument();
+  });
+
+  it('"Acerca de" muestra og-image.png escalada y con texto alternativo', async () => {
+    const user = userEvent.setup();
+    renderApp();
+    await user.click(screen.getByRole('link', { name: 'Acerca de' }));
+    const img = (await screen.findByAltText(/comparación de dos documentos/)) as HTMLImageElement;
+    expect(img).toHaveAttribute('src', '/og-image.png');
+    // Dimensiones reales declaradas (evita saltos de maquetación) y escalado fluido por CSS.
+    expect(img).toHaveAttribute('width', '1248');
+    expect(img).toHaveAttribute('height', '832');
+    expect(img.className).toMatch(/w-full/);
+    expect(img.className).toMatch(/h-auto/);
+  });
+});
+
+describe('Pie de página', () => {
+  it('enlaza a Blog, Aitor Hub y Contacto en pestaña nueva y de forma segura', () => {
+    renderApp();
+    const expected: [string, string][] = [
+      ['Blog', 'https://aitorsanchez.pages.dev/'],
+      ['Aitor Hub', 'https://aitorhub.vercel.app/'],
+      ['Contacto', 'https://aitorsanchez.pages.dev/contacto/'],
+    ];
+    for (const [name, href] of expected) {
+      const a = screen.getByRole('link', { name: new RegExp(`^${name}`) });
+      expect(a).toHaveAttribute('href', href);
+      expect(a).toHaveAttribute('target', '_blank');
+      expect(a.getAttribute('rel')).toContain('noopener');
+      expect(a.getAttribute('rel')).toContain('noreferrer');
+    }
+  });
+
+  it('enlaza internamente a Acerca de y a Privacidad', () => {
+    renderApp();
+    expect(screen.getByRole('link', { name: 'Acerca de' })).toHaveAttribute('href', '#about');
+    expect(screen.getByRole('link', { name: 'Privacidad' })).toHaveAttribute('href', '#privacy');
+  });
+
+  it('muestra el texto de copyright exacto', () => {
+    renderApp();
+    expect(
+      screen.getByText('Autor: Aitor Sánchez Gutiérrez. © 2026 - Todos los derechos reservados.'),
+    ).toBeInTheDocument();
+  });
+
+  it('el aviso de privacidad no afirma que no se envíe nada (hay analítica)', () => {
+    renderApp();
+    const note = screen.getByText(/se procesan en tu navegador y nunca se envían/);
+    expect(note.textContent).toMatch(/estadísticas de visitas/);
+  });
+
+  it('se traduce al inglés', async () => {
+    const user = userEvent.setup();
+    renderApp();
+    await user.click(screen.getByRole('button', { name: 'English' }));
+    expect(screen.getByText('Author: Aitor Sánchez Gutiérrez. © 2026 - All rights reserved.')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Contact (opens in a new tab)' })).toBeInTheDocument();
+  });
+});
+
+describe('Política de privacidad', () => {
+  it('se abre desde el pie con las 11 secciones y sin selector de modos', async () => {
+    const user = userEvent.setup();
+    renderApp();
+    await user.click(screen.getByRole('link', { name: 'Privacidad' }));
+    expect(await screen.findByRole('heading', { level: 1, name: 'Política de Privacidad' })).toBeInTheDocument();
+    expect(screen.getAllByRole('heading', { level: 2 }).filter((h) => /^\d+\. /.test(h.textContent ?? ''))).toHaveLength(11);
+    expect(screen.getByText(/20\/11\/2026/)).toBeInTheDocument();
+    expect(screen.queryByRole('navigation', { name: 'Modo de comparación' })).not.toBeInTheDocument();
+    expect(document.title).toContain('Política de privacidad');
+  });
+
+  it('muestra el responsable, el correo y la AEPD como enlaces', async () => {
+    const user = userEvent.setup();
+    renderApp();
+    await user.click(screen.getByRole('link', { name: 'Privacidad' }));
+    await screen.findByRole('heading', { level: 1, name: 'Política de Privacidad' });
+    const mails = screen.getAllByRole('link', { name: 'blog.cottage627@passinbox.com' });
+    expect(mails.length).toBeGreaterThanOrEqual(2);
+    expect(mails[0]).toHaveAttribute('href', 'mailto:blog.cottage627@passinbox.com');
+    expect(screen.getByRole('link', { name: 'www.aepd.es' })).toHaveAttribute('href', 'https://www.aepd.es/');
+    expect(screen.getByText('Aitor Sánchez Gutiérrez')).toBeInTheDocument();
+  });
+
+  it('marca el texto legal como español aunque la interfaz esté en inglés', async () => {
+    const user = userEvent.setup();
+    renderApp();
+    await user.click(screen.getByRole('button', { name: 'English' }));
+    await user.click(screen.getByRole('link', { name: 'Privacy' }));
+    expect(await screen.findByText('The legal text is provided in Spanish only.')).toBeInTheDocument();
+    expect(document.querySelector('article')).toHaveAttribute('lang', 'es');
+  });
+
+  it('el botón de volver regresa a la aplicación', async () => {
+    const user = userEvent.setup();
+    renderApp();
+    await user.click(screen.getByRole('link', { name: 'Privacidad' }));
+    await user.click(await screen.findByRole('button', { name: 'Volver a la aplicación' }));
+    expect(await screen.findByLabelText('Texto original (A)')).toBeVisible();
   });
 });
 

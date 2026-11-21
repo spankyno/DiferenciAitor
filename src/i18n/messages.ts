@@ -18,8 +18,27 @@ export const es = {
   'mode.folders': 'Carpetas',
   'mode.foldersDesc': 'Compara dos directorios',
   'mode.about': 'Acerca de',
-  'footer.privacy': 'Todo se procesa en tu navegador. Nada se envía a ningún servidor.',
+  'mode.privacy': 'Política de privacidad',
+
+  // Pie de página
+  'footer.tagline': 'Compara textos, archivos y carpetas sin que salgan de tu dispositivo.',
+  'footer.note':
+    'Los textos y archivos que comparas se procesan en tu navegador y nunca se envían. Solo se registran estadísticas de visitas, sin cookies.',
+  'footer.nav': 'Enlaces del pie de página',
+  'footer.colApp': 'Aplicación',
+  'footer.colAuthor': 'Autor',
   'footer.about': 'Acerca de',
+  'footer.privacyLink': 'Privacidad',
+  'footer.blog': 'Blog',
+  'footer.hub': 'Aitor Hub',
+  'footer.contact': 'Contacto',
+  'footer.newTab': '(se abre en una pestaña nueva)',
+  'footer.copyright': 'Autor: Aitor Sánchez Gutiérrez. © 2026 - Todos los derechos reservados.',
+
+  // Política de privacidad
+  'privacy.title': 'Política de Privacidad',
+  'privacy.langNote': 'El texto legal se ofrece únicamente en español.',
+  'privacy.back': 'Volver a la aplicación',
 
   // Acciones
   'actions.sample': 'Cargar ejemplo',
@@ -188,7 +207,9 @@ export const es = {
     'Herramienta de comparación 100 % en tu navegador. Privacidad real, resultados rápidos y diferencias claras.',
   'about.p1Title': 'Privacidad total',
   'about.p1Body':
-    'Ningún texto, archivo o carpeta sale de tu dispositivo. La política de seguridad de la página bloquea las conexiones a otros servidores, así que puedes comprobarlo tú mismo.',
+    'Ningún texto, archivo o carpeta que compares sale de tu dispositivo: todo se procesa en tu navegador. La política de seguridad de la página limita las conexiones externas al panel de analítica de visitas, así que puedes comprobarlo tú mismo. Consulta la política de privacidad.',
+  'about.imageAlt':
+    'DiferenciAItor: comparación de dos documentos con las líneas eliminadas en rojo y las añadidas en verde, y los iconos de texto, archivo y carpeta.',
   'about.p2Title': 'Rápido de verdad',
   'about.p2Body':
     'El cálculo se hace en segundo plano (Web Worker) y las listas largas se dibujan por partes: la interfaz no se congela con archivos grandes.',
@@ -237,8 +258,25 @@ export const en: Record<MessageKey, string> = {
   'mode.folders': 'Folders',
   'mode.foldersDesc': 'Compare two directories',
   'mode.about': 'About',
-  'footer.privacy': 'Everything is processed in your browser. Nothing is sent to any server.',
+  'mode.privacy': 'Privacy policy',
+
+  'footer.tagline': 'Compare texts, files and folders without them leaving your device.',
+  'footer.note':
+    'The texts and files you compare are processed in your browser and never sent anywhere. Only visit statistics are recorded, without cookies.',
+  'footer.nav': 'Footer links',
+  'footer.colApp': 'Application',
+  'footer.colAuthor': 'Author',
   'footer.about': 'About',
+  'footer.privacyLink': 'Privacy',
+  'footer.blog': 'Blog',
+  'footer.hub': 'Aitor Hub',
+  'footer.contact': 'Contact',
+  'footer.newTab': '(opens in a new tab)',
+  'footer.copyright': 'Author: Aitor Sánchez Gutiérrez. © 2026 - All rights reserved.',
+
+  'privacy.title': 'Privacy Policy',
+  'privacy.langNote': 'The legal text is provided in Spanish only.',
+  'privacy.back': 'Back to the app',
 
   'actions.sample': 'Load example',
   'actions.swap': 'Swap A ↔ B',
@@ -399,7 +437,9 @@ export const en: Record<MessageKey, string> = {
     'A comparison tool that runs 100% in your browser. Real privacy, fast results and clear differences.',
   'about.p1Title': 'Total privacy',
   'about.p1Body':
-    'No text, file or folder leaves your device. The page security policy blocks connections to other servers, so you can verify it yourself.',
+    'No text, file or folder you compare leaves your device: everything is processed in your browser. The page security policy limits external connections to the visit-analytics dashboard, so you can verify it yourself. See the privacy policy.',
+  'about.imageAlt':
+    'DiferenciAItor: a comparison of two documents with removed lines in red and added lines in green, and the text, file and folder icons.',
   'about.p2Title': 'Genuinely fast',
   'about.p2Body':
     'Computation runs in the background (Web Worker) and long lists are drawn in pieces: the interface does not freeze with large files.',

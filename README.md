@@ -9,14 +9,14 @@ Comparador de **textos, archivos y carpetas** que funciona 100 % en el navegador
 - **Carpetas**: exclusiones configurables (estilo `.gitignore`), detección de archivos **renombrados/movidos**, estado **equivalente** (iguales según las opciones), progreso con cancelación, filtros, y exportación del informe a **CSV / JSON / HTML**.
 - **Opciones**: ignorar espacios, mayúsculas, líneas vacías, y normalizar JSON (claves ordenadas). Se aplican a la comparación *y* al resaltado interno.
 - **Rendimiento**: el diff se calcula en un **Web Worker** (cancelable); las listas largas se **virtualizan**. 30.000 líneas se comparan en ~0,2 s.
-- **Extras**: ES/EN, modo claro/oscuro (sigue al sistema), PWA con uso sin conexión, accesibilidad por teclado y lector de pantalla.
+- **Extras**: pie con enlaces, página de privacidad, ES/EN, modo claro/oscuro (sigue al sistema), PWA con uso sin conexión, accesibilidad por teclado y lector de pantalla.
 
 ## Desarrollo
 
 ```bash
 npm install
 npm run dev        # http://localhost:3000
-npm test           # 71 tests (motor, utilidades y componentes)
+npm test           # 105 tests (motor, utilidades, componentes y SEO/CSP)
 npm run lint       # ESLint + tsc (modo estricto)
 npm run build      # genera dist/
 ```
@@ -31,7 +31,15 @@ Es un sitio estático: no necesita servidor, variables de entorno ni funciones.
 2. Vercel detecta Vite automáticamente (`vercel.json` ya fija `npm run build` y `dist`).
 3. Despliega. No hay nada más que configurar.
 
-`vercel.json` añade una **Content-Security-Policy** que bloquea cualquier conexión a otros orígenes (`connect-src 'self'`), de modo que la promesa de privacidad es verificable desde las herramientas de desarrollo del navegador. Tras desplegar, añade en `index.html` las etiquetas `og:url` y `<link rel="canonical">` con tu dominio.
+`vercel.json` añade una **Content-Security-Policy** que solo permite conexiones al propio sitio y al panel de analítica (`aitors-hub-dashboard.asanchezgu.workers.dev`, en `script-src`, `connect-src` e `img-src`). Cualquier otro origen queda bloqueado, de modo que se puede comprobar desde las herramientas de desarrollo que los textos y archivos comparados no salen del navegador.
+
+### Analítica, privacidad y SEO
+
+- **Analítica**: el script de seguimiento está en `index.html`. Si cambias de panel, actualiza también el origen en la CSP de `vercel.json` (hay un test que lo vigila).
+- **Política de privacidad**: `src/components/PrivacyView.tsx`, accesible en `/#privacy`. Es el texto legal en español; si cambia, actualiza también la fecha.
+- **SEO**: `index.html` incluye canonical, Open Graph, Twitter Card, JSON-LD (WebSite, WebApplication y Person), verificación de Google Search Console, `robots.txt` y `sitemap.xml`.
+- **Iconos**: se generan con la misma geometría que el logo (`src/components/Logo.tsx`): `favicon.ico` (16/32/48), `favicon.svg`, PNG, `apple-touch-icon` e iconos de la PWA (incl. *maskable*).
+- **`og-image.png` es en realidad un JPEG** (1248×832, ~200 KB). Se mantiene el nombre, pero `og:image:type` declara `image/jpeg` y `vercel.json` fuerza ese `Content-Type`. Si quieres un PNG real o renombrarla a `.jpg`, actualiza `index.html`, `AboutView.tsx` y `vercel.json`.
 
 ## Estructura
 

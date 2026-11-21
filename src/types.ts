@@ -1,4 +1,4 @@
-export type DiffMode = 'text' | 'files' | 'folders' | 'about';
+export type DiffMode = 'text' | 'files' | 'folders' | 'about' | 'privacy';
 
 export type ViewMode = 'side-by-side' | 'unified';
 

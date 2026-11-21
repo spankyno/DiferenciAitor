@@ -35,6 +35,17 @@ export function AboutView({ setMode }: { setMode: (m: DiffMode) => void }) {
         <p className="max-w-2xl mx-auto text-lg text-slate-600 dark:text-slate-400">{t('about.lead')}</p>
       </div>
 
+      <figure className="mx-auto max-w-4xl">
+        <img
+          src="/og-image.png"
+          alt={t('about.imageAlt')}
+          width={1248}
+          height={832}
+          decoding="async"
+          className="block w-full h-auto rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xl shadow-indigo-950/10 dark:shadow-black/40"
+        />
+      </figure>
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {pillars.map(({ icon: Icon, tone: tn, title, body }) => (
           <div key={title} className={`${card} p-6 space-y-3`}>

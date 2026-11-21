@@ -5,6 +5,7 @@ import { Footer } from './components/Footer';
 import { FolderDiffView } from './components/FolderDiffView';
 import { ModeSelector } from './components/ModeSelector';
 import { Navbar } from './components/Navbar';
+import { PrivacyView } from './components/PrivacyView';
 import { TextDiffView } from './components/TextDiffView';
 import { mergeDefaults, usePersistentState } from './hooks/usePersistentState';
 import { useI18n } from './i18n';
@@ -15,7 +16,7 @@ import {
   type ViewSettings,
 } from './types';
 
-const MODES: DiffMode[] = ['text', 'files', 'folders', 'about'];
+const MODES: DiffMode[] = ['text', 'files', 'folders', 'about', 'privacy'];
 
 function modeFromHash(): DiffMode {
   const h = window.location.hash.replace('#', '');
@@ -55,6 +56,7 @@ export default function App() {
       const m = modeFromHash();
       setModeState(m);
       setVisited((v) => (v.has(m) ? v : new Set(v).add(m)));
+      window.scrollTo({ top: 0 });
     };
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
@@ -68,7 +70,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    document.title = `DiferenciAItor — ${t(`mode.${mode === 'about' ? 'about' : mode}` as 'mode.text')}`;
+    document.title = `DiferenciAItor — ${t(`mode.${mode}` as 'mode.text')}`;
   }, [mode, t]);
 
   const shared = { options, onOptionsChange: setOptions, settings, onSettingsChange: setSettings };
@@ -76,7 +78,7 @@ export default function App() {
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
       <Navbar dark={dark} onToggleTheme={() => setTheme(dark ? 'light' : 'dark')} onHome={() => setMode('text')} />
-      {mode !== 'about' && <ModeSelector mode={mode} setMode={setMode} />}
+      {mode !== 'about' && mode !== 'privacy' && <ModeSelector mode={mode} setMode={setMode} />}
       <main className="flex-1">
         {visited.has('text') && (
           <div hidden={mode !== 'text'}>
@@ -94,8 +96,9 @@ export default function App() {
           </div>
         )}
         {mode === 'about' && <AboutView setMode={setMode} />}
+        {mode === 'privacy' && <PrivacyView setMode={setMode} />}
       </main>
-      <Footer setMode={setMode} />
+      <Footer />
     </div>
   );
 }

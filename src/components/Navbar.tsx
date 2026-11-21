@@ -1,4 +1,5 @@
-import { FileDiff, Moon, Sun } from 'lucide-react';
+import { Moon, Sun } from 'lucide-react';
+import { Logo } from './Logo';
 import { useI18n } from '../i18n';
 import { focusRing } from './ui';
 
@@ -16,9 +17,7 @@ export function Navbar({
     <header className="sticky top-0 z-30 border-b border-slate-200 dark:border-slate-800 bg-white/85 dark:bg-slate-950/85 backdrop-blur">
       <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
         <button type="button" onClick={onHome} className={`flex items-center gap-2.5 rounded-lg ${focusRing}`}>
-          <span className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-md shadow-indigo-600/30">
-            <FileDiff className="w-4.5 h-4.5" />
-          </span>
+          <Logo size={32} />
           <span className="font-extrabold tracking-tight text-slate-900 dark:text-white">
             Diferenci<span className="text-indigo-600 dark:text-indigo-400">AI</span>tor
           </span>

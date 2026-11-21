@@ -3,47 +3,133 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DiferenciAItor — Comparador de textos, archivos y carpetas</title>
+    <meta
+      name="description"
+      content="Compara textos, archivos y carpetas en tu navegador. Tus datos nunca salen de tu dispositivo. Gratis, sin registro, con informes y exportación .patch."
+    />
+    <link rel="canonical" href="https://diferenciaitor.vercel.app/" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <meta name="author" content="Aitor Sánchez Gutiérrez" />
+
+    <!-- Propiedad del sitio (Google Search Console) -->
+    <meta name="google-site-verification" content="MEiDmnJOvnWITHUi0HCLxuoulOEm0oTM4fwQMugxoyY" />
+
+    <!-- Aspecto del navegador e iconos -->
     <meta name="theme-color" content="#020617" />
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="apple-touch-icon" href="/icon-192.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
-    <!-- Aplica el tema antes de pintar (evita el parpadeo). Archivo externo por la CSP. -->
-    <script src="/theme-init.js"></script>
-    <title>DiferenciAItor — Comparador avanzado de textos, archivos y carpetas</title>
-    <meta name="description" content="Herramienta 100% client-side para comparar diferencias entre textos, archivos y carpetas con total privacidad y sin salir del navegador." />
-    
-    <!-- Open Graph / Social Sharing Cards -->
+
+    <!-- Open Graph (Facebook, LinkedIn, WhatsApp, Telegram...) -->
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="DiferenciAItor — Comparador avanzado de textos, archivos y carpetas" />
-    <meta property="og:description" content="Herramienta 100% client-side para comparar diferencias entre textos, archivos y carpetas con total privacidad y sin salir del navegador." />
-    <meta property="og:image" content="/og-image.png" />
+    <meta property="og:url" content="https://diferenciaitor.vercel.app/" />
     <meta property="og:site_name" content="DiferenciAItor" />
+    <meta property="og:locale" content="es_ES" />
+    <meta property="og:locale:alternate" content="en_GB" />
+    <meta property="og:title" content="DiferenciAItor — Comparador de textos, archivos y carpetas" />
+    <meta
+      property="og:description"
+      content="Compara textos, archivos y carpetas en tu navegador. Tus datos nunca salen de tu dispositivo. Gratis y sin registro."
+    />
+    <meta property="og:image" content="https://diferenciaitor.vercel.app/og-image.png" />
+    <meta property="og:image:secure_url" content="https://diferenciaitor.vercel.app/og-image.png" />
+    <meta property="og:image:type" content="image/jpeg" />
+    <meta property="og:image:width" content="1248" />
+    <meta property="og:image:height" content="832" />
+    <meta
+      property="og:image:alt"
+      content="DiferenciAItor: comparación de dos documentos con las líneas eliminadas en rojo y las añadidas en verde, y los iconos de texto, archivo y carpeta."
+    />
 
-    <!-- Twitter / X Cards -->
+    <!-- Twitter / X -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="DiferenciAItor — Comparador avanzado de textos, archivos y carpetas" />
-    <meta name="twitter:description" content="Herramienta 100% client-side para comparar diferencias entre textos, archivos y carpetas con total privacidad y sin salir del navegador." />
-    <meta name="twitter:image" content="/og-image.png" />
+    <meta name="twitter:title" content="DiferenciAItor — Comparador de textos, archivos y carpetas" />
+    <meta
+      name="twitter:description"
+      content="Compara textos, archivos y carpetas en tu navegador. Tus datos nunca salen de tu dispositivo."
+    />
+    <meta name="twitter:image" content="https://diferenciaitor.vercel.app/og-image.png" />
+    <meta
+      name="twitter:image:alt"
+      content="DiferenciAItor: comparación de dos documentos con las líneas eliminadas en rojo y las añadidas en verde."
+    />
 
-    <!-- Schema.org Structured Data -->
+    <!-- Datos estructurados (Schema.org) -->
     <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "WebApplication",
-      "name": "DiferenciAItor",
-      "applicationCategory": "DeveloperApplication",
-      "operatingSystem": "All",
-      "description": "Herramienta 100% client-side para comparar diferencias entre textos, archivos y carpetas con total privacidad y sin salir del navegador.",
-      "offers": {
-        "@type": "Offer",
-        "price": "0",
-        "priceCurrency": "EUR"
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "@id": "https://diferenciaitor.vercel.app/#website",
+            "url": "https://diferenciaitor.vercel.app/",
+            "name": "DiferenciAItor",
+            "inLanguage": ["es", "en"],
+            "author": { "@id": "https://aitorsanchez.pages.dev/#aitor-sanchez" },
+            "publisher": { "@id": "https://aitorsanchez.pages.dev/#aitor-sanchez" }
+          },
+          {
+            "@type": "WebApplication",
+            "@id": "https://diferenciaitor.vercel.app/#app",
+            "url": "https://diferenciaitor.vercel.app/",
+            "name": "DiferenciAItor",
+            "description": "Herramienta para comparar textos, archivos y carpetas directamente en el navegador, sin enviar los datos a ningún servidor.",
+            "applicationCategory": "DeveloperApplication",
+            "operatingSystem": "Cualquiera con un navegador moderno",
+            "browserRequirements": "Requiere JavaScript",
+            "inLanguage": ["es", "en"],
+            "isAccessibleForFree": true,
+            "image": "https://diferenciaitor.vercel.app/og-image.png",
+            "featureList": [
+              "Comparación de textos lado a lado o unificada",
+              "Comparación de archivos con huella SHA-256",
+              "Comparación de carpetas con detección de archivos renombrados",
+              "Exportación de diferencias como .patch y de informes en CSV, JSON y HTML",
+              "Funcionamiento sin conexión (PWA)"
+            ],
+            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" },
+            "isPartOf": { "@id": "https://diferenciaitor.vercel.app/#website" },
+            "author": { "@id": "https://aitorsanchez.pages.dev/#aitor-sanchez" },
+            "creator": { "@id": "https://aitorsanchez.pages.dev/#aitor-sanchez" }
+          },
+          {
+            "@type": "Person",
+            "@id": "https://aitorsanchez.pages.dev/#aitor-sanchez",
+            "name": "Aitor Sánchez Gutiérrez",
+            "url": "https://aitorsanchez.pages.dev",
+            "sameAs": ["https://aitorsanchez.pages.dev", "https://aitorhub.vercel.app"],
+            "contactPoint": {
+              "@type": "ContactPoint",
+              "contactType": "contacto",
+              "url": "https://aitorsanchez.pages.dev/contacto"
+            }
+          }
+        ]
       }
-    }
     </script>
+
+    <!-- Aplica el tema antes de pintar (evita el parpadeo). Archivo propio por la CSP. -->
+    <script src="/theme-init.js"></script>
+
+    <!-- Analítica de visitas (panel propio) -->
+    <script
+      src="https://aitors-hub-dashboard.asanchezgu.workers.dev/tracker.js"
+      data-app="diferenciaitor"
+      data-key="ak_a2b3b125b08046038ab09dda55271f5e"
+      async
+    ></script>
   </head>
   <body>
     <div id="root"></div>
+    <noscript>
+      <p style="font-family: system-ui, sans-serif; padding: 2rem; text-align: center">
+        DiferenciAItor necesita JavaScript para comparar textos, archivos y carpetas en tu navegador.
+      </p>
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
