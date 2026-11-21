@@ -21,12 +21,7 @@ export const es = {
   'mode.privacy': 'Política de privacidad',
 
   // Pie de página
-  'footer.tagline': 'Compara textos, archivos y carpetas sin que salgan de tu dispositivo.',
-  'footer.note':
-    'Los textos y archivos que comparas se procesan en tu navegador y nunca se envían. Solo se registran estadísticas de visitas, sin cookies.',
   'footer.nav': 'Enlaces del pie de página',
-  'footer.colApp': 'Aplicación',
-  'footer.colAuthor': 'Autor',
   'footer.about': 'Acerca de',
   'footer.privacyLink': 'Privacidad',
   'footer.blog': 'Blog',
@@ -260,12 +255,7 @@ export const en: Record<MessageKey, string> = {
   'mode.about': 'About',
   'mode.privacy': 'Privacy policy',
 
-  'footer.tagline': 'Compare texts, files and folders without them leaving your device.',
-  'footer.note':
-    'The texts and files you compare are processed in your browser and never sent anywhere. Only visit statistics are recorded, without cookies.',
   'footer.nav': 'Footer links',
-  'footer.colApp': 'Application',
-  'footer.colAuthor': 'Author',
   'footer.about': 'About',
   'footer.privacyLink': 'Privacy',
   'footer.blog': 'Blog',

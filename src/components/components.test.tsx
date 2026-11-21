@@ -156,10 +156,14 @@ describe('Pie de página', () => {
     ).toBeInTheDocument();
   });
 
-  it('el aviso de privacidad no afirma que no se envíe nada (hay analítica)', () => {
+  it('es compacto: sin texto de privacidad, sin eslogan y sin títulos de columna', () => {
     renderApp();
-    const note = screen.getByText(/se procesan en tu navegador y nunca se envían/);
-    expect(note.textContent).toMatch(/estadísticas de visitas/);
+    const footer = screen.getByRole('contentinfo');
+    expect(within(footer).queryByText(/se procesan en tu navegador/)).not.toBeInTheDocument();
+    expect(within(footer).queryByText(/sin que salgan de tu dispositivo/)).not.toBeInTheDocument();
+    expect(within(footer).queryByRole('heading')).not.toBeInTheDocument();
+    expect(within(footer).queryByText(/^(Aplicación|Autor)$/i)).not.toBeInTheDocument();
+    expect(within(footer).getAllByRole('link')).toHaveLength(5);
   });
 
   it('se traduce al inglés', async () => {
