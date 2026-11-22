@@ -1,6 +1,10 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { PRIVACY_TITLES } from './content/privacy';
+import { es } from './i18n/messages';
+import { PAGE_META, pageIdForMode, pageUrl, type PageId } from '../seo/meta';
+import { renderPage } from '../seo/render';
 
 const root = resolve(import.meta.dirname, '..');
 const html = readFileSync(resolve(root, 'index.html'), 'utf8');
@@ -198,5 +202,171 @@ describe('favicon e iconos', () => {
   it('robots.txt y sitemap.xml apuntan a la URL de producción', () => {
     expect(readFileSync(resolve(root, 'public/robots.txt'), 'utf8')).toContain(`Sitemap: ${SITE}sitemap.xml`);
     expect(readFileSync(resolve(root, 'public/sitemap.xml'), 'utf8')).toContain(`<loc>${SITE}</loc>`);
+  });
+});
+
+describe('metadatos por página (seo/meta.ts)', () => {
+  const ids = Object.keys(PAGE_META) as PageId[];
+
+  it('títulos y descripciones caben en los límites de los buscadores, en ES y EN', () => {
+    for (const id of ids) {
+      for (const lang of ['es', 'en'] as const) {
+        expect(PAGE_META[id].title[lang].length, `${id} title ${lang}`).toBeLessThanOrEqual(65);
+        expect(PAGE_META[id].description[lang].length, `${id} desc ${lang}`).toBeLessThanOrEqual(160);
+        expect(PAGE_META[id].description[lang].length, `${id} desc ${lang}`).toBeGreaterThanOrEqual(70);
+      }
+    }
+  });
+
+  it('cada página tiene título y descripción únicos (sin contenido duplicado)', () => {
+    for (const lang of ['es', 'en'] as const) {
+      expect(new Set(ids.map((i) => PAGE_META[i].title[lang])).size).toBe(ids.length);
+      expect(new Set(ids.map((i) => PAGE_META[i].description[lang])).size).toBe(ids.length);
+    }
+  });
+
+  it('la portada incluye las palabras clave principales', () => {
+    const t = PAGE_META.home.title.es.toLowerCase();
+    for (const k of ['comparar', 'textos', 'archivos', 'carpetas', 'online']) expect(t).toContain(k);
+  });
+
+  it('las herramientas comparten portada; about y privacy tienen la suya', () => {
+    expect(['text', 'files', 'folders'].map(pageIdForMode)).toEqual(['home', 'home', 'home']);
+    expect(pageIdForMode('about')).toBe('about');
+    expect(pageIdForMode('privacy')).toBe('privacy');
+  });
+});
+
+describe('index.html coincide con seo/meta.ts (no hay parpadeo de título al arrancar React)', () => {
+  it('título y descripción de la portada', () => {
+    expect(doc.title).toBe(PAGE_META.home.title.es);
+    expect(meta('meta[name="description"]')).toBe(PAGE_META.home.description.es);
+    expect(meta('meta[property="og:title"]')).toBe(PAGE_META.home.title.es);
+    expect(meta('meta[property="og:description"]')).toBe(PAGE_META.home.description.es);
+    expect(meta('meta[name="twitter:title"]')).toBe(PAGE_META.home.title.es);
+    expect(meta('meta[name="twitter:description"]')).toBe(PAGE_META.home.description.es);
+  });
+});
+
+describe('contenido estático de la portada (rastreadores sin JavaScript)', () => {
+  const root = doc.getElementById('root')!;
+
+  it('hay contenido real dentro de #root, con marcadores para el build', () => {
+    expect(html).toContain('<!--static-->');
+    expect(html).toContain('<!--/static-->');
+    expect(root.textContent!.trim().length).toBeGreaterThan(300);
+  });
+
+  it('tiene un único h1 idéntico al de la app', () => {
+    const h1s = root.querySelectorAll('h1');
+    expect(h1s).toHaveLength(1);
+    expect(h1s[0]!.textContent).toBe(es['home.h1']);
+  });
+
+  it('enlaza (con enlaces rastreables) a las páginas secundarias', () => {
+    const hrefs = [...root.querySelectorAll('a')].map((a) => a.getAttribute('href'));
+    expect(hrefs).toEqual(expect.arrayContaining(['/acerca-de', '/privacidad']));
+  });
+
+  it('menciona las tres herramientas', () => {
+    const text = root.textContent!.toLowerCase();
+    for (const k of ['comparar textos', 'comparar archivos', 'comparar carpetas', '.patch']) expect(text).toContain(k);
+  });
+});
+
+describe('páginas estáticas generadas en el build (renderPage)', () => {
+  const secondary = ['about', 'privacy'] as const;
+
+  it.each(secondary)('%s: título, descripción, canonical y Open Graph propios', (id) => {
+    const d = new DOMParser().parseFromString(renderPage(html, id), 'text/html');
+    const url = pageUrl(id);
+    expect(d.title).toBe(PAGE_META[id].title.es);
+    expect(d.querySelector('meta[name="description"]')?.getAttribute('content')).toBe(PAGE_META[id].description.es);
+    expect(d.querySelector('link[rel="canonical"]')?.getAttribute('href')).toBe(url);
+    expect(d.querySelector('meta[property="og:url"]')?.getAttribute('content')).toBe(url);
+    expect(d.querySelector('meta[property="og:title"]')?.getAttribute('content')).toBe(PAGE_META[id].title.es);
+    expect(d.querySelector('meta[name="twitter:title"]')?.getAttribute('content')).toBe(PAGE_META[id].title.es);
+  });
+
+  it.each(secondary)('%s: conserva la imagen social, la verificación de Google y el tracker', (id) => {
+    const out = renderPage(html, id);
+    expect(out).toContain('google-site-verification');
+    expect(out).toContain(`${SITE}og-image.png`);
+    expect(out).toContain(`${TRACKER}/tracker.js`);
+    expect(out).toContain('data-app="diferenciaitor"');
+  });
+
+  it.each(secondary)('%s: un único h1 y sin restos de la portada', (id) => {
+    const d = new DOMParser().parseFromString(renderPage(html, id), 'text/html');
+    const h1 = d.querySelectorAll('#root h1');
+    expect(h1).toHaveLength(1);
+    expect(h1[0]!.textContent).not.toBe(es['home.h1']);
+  });
+
+  it('about: reutiliza los textos de la app (fuente única) y enlaza a las demás páginas', () => {
+    const d = new DOMParser().parseFromString(renderPage(html, 'about'), 'text/html');
+    expect(d.querySelector('#root h1')!.textContent).toBe(es['about.title']);
+    const h2 = [...d.querySelectorAll('#root h2')].map((e) => e.textContent);
+    expect(h2).toEqual([es['about.p1Title'], es['about.p2Title'], es['about.p3Title'], es['about.modesTitle']]);
+    const hrefs = [...d.querySelectorAll('#root a')].map((a) => a.getAttribute('href'));
+    expect(hrefs).toEqual(['/', '/privacidad']);
+  });
+
+  it('privacy: lista las 11 secciones de la política', () => {
+    const d = new DOMParser().parseFromString(renderPage(html, 'privacy'), 'text/html');
+    const items = [...d.querySelectorAll('#root li')].map((e) => e.textContent);
+    expect(items).toEqual([...PRIVACY_TITLES]);
+    expect(items).toHaveLength(11);
+  });
+
+  it.each(secondary)('%s: JSON-LD válido con la página y sus migas de pan', (id) => {
+    const d = new DOMParser().parseFromString(renderPage(html, id), 'text/html');
+    const ld = JSON.parse(d.querySelector('script[type="application/ld+json"]')!.textContent!);
+    const graph = ld['@graph'] as { '@type': string; '@id'?: string; url?: string; itemListElement?: { position: number; item: string }[]; breadcrumb?: { '@id': string }; isPartOf?: { '@id': string } }[];
+    const page = graph.find((n) => n['@type'] === (id === 'about' ? 'AboutPage' : 'WebPage'))!;
+    const crumbs = graph.find((n) => n['@type'] === 'BreadcrumbList')!;
+    expect(page.url).toBe(pageUrl(id));
+    expect(page.isPartOf?.['@id']).toBe(`${SITE}#website`);
+    expect(page.breadcrumb?.['@id']).toBe(crumbs['@id']);
+    expect(crumbs.itemListElement!.map((i) => [i.position, i.item])).toEqual([[1, SITE], [2, pageUrl(id)]]);
+    // Se conserva el grafo original (sitio, aplicación y autor).
+    expect(graph.map((n) => n['@type'])).toEqual(expect.arrayContaining(['WebSite', 'WebApplication', 'Person']));
+  });
+
+  it('falla de forma ruidosa si la plantilla no tiene los marcadores o las etiquetas esperadas', () => {
+    expect(() => renderPage(html.replace('<!--static-->', ''), 'about')).toThrow(/marcadores/);
+    expect(() => renderPage(html.replace(/<link rel="canonical"[^>]*>/, ''), 'about')).toThrow(/canonical/);
+    expect(() => renderPage(html.replace(/<meta\s+name="description"[\s\S]*?\/>/, ''), 'about')).toThrow(/description/);
+  });
+});
+
+describe('sitemap, URLs limpias y service worker', () => {
+  const sitemap = readFileSync(resolve(root, 'public/sitemap.xml'), 'utf8');
+  const locs = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
+
+  it('el sitemap lista exactamente las páginas con URL propia', () => {
+    expect(locs).toEqual((Object.keys(PAGE_META) as PageId[]).map(pageUrl));
+  });
+
+  it('todas las URLs del sitemap son absolutas, sin hash y sin barra final (salvo la raíz)', () => {
+    for (const l of locs) {
+      expect(l).toMatch(/^https:\/\/diferenciaitor\.vercel\.app\//);
+      expect(l).not.toContain('#');
+      if (l !== SITE) expect(l.endsWith('/')).toBe(false);
+    }
+  });
+
+  it('vercel.json sirve las páginas sin .html y sin barra final', () => {
+    const cfg = JSON.parse(readFileSync(resolve(root, 'vercel.json'), 'utf8')) as { cleanUrls?: boolean; trailingSlash?: boolean };
+    expect(cfg.cleanUrls).toBe(true);
+    expect(cfg.trailingSlash).toBe(false);
+  });
+
+  it('el service worker precachea las páginas y cachea cada navegación por su URL', () => {
+    const sw = readFileSync(resolve(root, 'public/sw.js'), 'utf8');
+    for (const p of ['/', '/acerca-de', '/privacidad']) expect(sw).toContain(`'${p}'`);
+    expect(sw).toContain('c.put(req, copy)'); // y no bajo la clave "/"
+    expect(sw).not.toContain("c.put('/', copy)");
+    expect(sw).toContain('Promise.allSettled'); // una ruta que falle no rompe la instalación
   });
 });

@@ -1,17 +1,19 @@
 import { ExternalLink } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useI18n } from '../i18n';
+import { AppLink } from './AppLink';
 import { Logo } from './Logo';
+import type { DiffMode } from '../types';
 import { focusRing } from './ui';
 
 const link = `inline-flex items-center gap-1 rounded text-sm text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline underline-offset-4 transition-colors ${focusRing}`;
 
-function Internal({ href, children }: { href: string; children: ReactNode }) {
+function Internal({ mode, children }: { mode: DiffMode; children: ReactNode }) {
   return (
     <li>
-      <a href={href} className={link}>
+      <AppLink mode={mode} className={link}>
         {children}
-      </a>
+      </AppLink>
     </li>
   );
 }
@@ -43,11 +45,13 @@ export function Footer() {
 
         <nav aria-label={t('footer.nav')}>
           <ul className="flex flex-wrap justify-center gap-x-5 gap-y-1.5">
-            <Internal href="#about">{t('footer.about')}</Internal>
-            <Internal href="#privacy">{t('footer.privacyLink')}</Internal>
+            <Internal mode="about">{t('footer.about')}</Internal>
+            <Internal mode="privacy">{t('footer.privacyLink')}</Internal>
             <External href="https://aitorsanchez.pages.dev/">{t('footer.blog')}</External>
             <External href="https://aitorhub.vercel.app/">{t('footer.hub')}</External>
-            <External href="https://aitorsanchez.pages.dev/contacto/">{t('footer.contact')}</External>
+            <External href="https://aitorsanchez.pages.dev/contacto/">
+              {t('footer.contact')}
+            </External>
           </ul>
         </nav>
       </div>

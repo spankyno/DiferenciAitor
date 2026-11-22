@@ -3,10 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>DiferenciAItor — Comparador de textos, archivos y carpetas</title>
+    <title>Comparar textos, archivos y carpetas online | DiferenciAItor</title>
     <meta
       name="description"
-      content="Compara textos, archivos y carpetas en tu navegador. Tus datos nunca salen de tu dispositivo. Gratis, sin registro, con informes y exportación .patch."
+      content="Compara textos, archivos y carpetas online y gratis. Resalta las diferencias línea a línea, detecta renombrados y exporta .patch. Sin subir nada."
     />
     <link rel="canonical" href="https://diferenciaitor.vercel.app/" />
     <meta name="robots" content="index, follow, max-image-preview:large" />
@@ -30,10 +30,10 @@
     <meta property="og:site_name" content="DiferenciAItor" />
     <meta property="og:locale" content="es_ES" />
     <meta property="og:locale:alternate" content="en_GB" />
-    <meta property="og:title" content="DiferenciAItor — Comparador de textos, archivos y carpetas" />
+    <meta property="og:title" content="Comparar textos, archivos y carpetas online | DiferenciAItor" />
     <meta
       property="og:description"
-      content="Compara textos, archivos y carpetas en tu navegador. Tus datos nunca salen de tu dispositivo. Gratis y sin registro."
+      content="Compara textos, archivos y carpetas online y gratis. Resalta las diferencias línea a línea, detecta renombrados y exporta .patch. Sin subir nada."
     />
     <meta property="og:image" content="https://diferenciaitor.vercel.app/og-image.png" />
     <meta property="og:image:secure_url" content="https://diferenciaitor.vercel.app/og-image.png" />
@@ -47,10 +47,10 @@
 
     <!-- Twitter / X -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="DiferenciAItor — Comparador de textos, archivos y carpetas" />
+    <meta name="twitter:title" content="Comparar textos, archivos y carpetas online | DiferenciAItor" />
     <meta
       name="twitter:description"
-      content="Compara textos, archivos y carpetas en tu navegador. Tus datos nunca salen de tu dispositivo."
+      content="Compara textos, archivos y carpetas online y gratis. Resalta las diferencias línea a línea, detecta renombrados y exporta .patch. Sin subir nada."
     />
     <meta name="twitter:image" content="https://diferenciaitor.vercel.app/og-image.png" />
     <meta
@@ -112,6 +112,20 @@
       }
     </script>
 
+    <!-- Contenido estático de la portada: lo ven buscadores y usuarios sin JavaScript; React lo sustituye al arrancar. -->
+    <style>
+      html.dark body { background: #020617; color: #e2e8f0; }
+      .ssr { max-width: 48rem; margin: 0 auto; padding: 2.5rem 1rem; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; }
+      .ssr h1 { font-size: 1.875rem; font-weight: 800; line-height: 1.2; margin: 0 0 0.75rem; }
+      .ssr h2 { font-size: 1.15rem; font-weight: 700; margin: 1.75rem 0 0.5rem; }
+      .ssr ul, .ssr ol { padding-left: 1.5rem; }
+      .ssr ul { list-style: disc; }
+      .ssr ol { list-style: decimal; }
+      .ssr nav { margin-top: 1.5rem; }
+      .ssr a { color: #4338ca; }
+      html.dark .ssr a { color: #a5b4fc; }
+    </style>
+
     <!-- Aplica el tema antes de pintar (evita el parpadeo). Archivo propio por la CSP. -->
     <script src="/theme-init.js"></script>
 
@@ -124,7 +138,23 @@
     ></script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root"><!--static-->
+      <main class="ssr">
+        <h1>Comparar textos, archivos y carpetas online</h1>
+        <p>
+          DiferenciAItor es un comparador gratuito que resalta las diferencias línea a línea entre dos textos, dos
+          archivos o dos carpetas, directamente en tu navegador. Tus textos y archivos no se suben a ningún servidor.
+        </p>
+        <h2>Qué puedes hacer</h2>
+        <ul>
+          <li><strong>Comparar textos</strong> en vista lado a lado o unificada, con resaltado dentro de la línea.</li>
+          <li><strong>Comparar archivos</strong> con huella SHA-256 y detección de diferencias solo de saltos de línea.</li>
+          <li><strong>Comparar carpetas</strong> con exclusiones tipo .gitignore, detección de archivos renombrados y exportación del informe a CSV, JSON o HTML.</li>
+          <li><strong>Exportar un .patch</strong> estándar, aplicable con git apply.</li>
+        </ul>
+        <nav aria-label="Enlaces"><a href="/acerca-de">Acerca de</a> · <a href="/privacidad">Política de privacidad</a></nav>
+      </main>
+    <!--/static--></div>
     <noscript>
       <p style="font-family: system-ui, sans-serif; padding: 2rem; text-align: center">
         DiferenciAItor necesita JavaScript para comparar textos, archivos y carpetas en tu navegador.

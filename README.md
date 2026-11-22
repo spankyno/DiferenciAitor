@@ -16,7 +16,7 @@ Comparador de **textos, archivos y carpetas** que funciona 100 % en el navegador
 ```bash
 npm install
 npm run dev        # http://localhost:3000
-npm test           # 105 tests (motor, utilidades, componentes y SEO/CSP)
+npm test           # 155 tests (motor, utilidades, componentes, rutas y SEO/CSP)
 npm run lint       # ESLint + tsc (modo estricto)
 npm run build      # genera dist/
 ```
@@ -37,6 +37,10 @@ Es un sitio estático: no necesita servidor, variables de entorno ni funciones.
 
 - **Analítica**: el script de seguimiento está en `index.html`. Si cambias de panel, actualiza también el origen en la CSP de `vercel.json` (hay un test que lo vigila).
 - **Política de privacidad**: `src/components/PrivacyView.tsx`, accesible en `/#privacy`. Es el texto legal en español; si cambia, actualiza también la fecha.
+- **Rutas reales**: `/acerca-de` y `/privacidad` son páginas indexables (las herramientas viven en `/` y se eligen con `#files`, `#folders`). Los enlaces antiguos `/#about` y `/#privacy` redirigen a la ruta real. La navegación interna no recarga la página, así que no se pierde lo que haya en las herramientas.
+- **HTML estático por página**: en el build, `vite.config.ts` genera `dist/acerca-de.html` y `dist/privacidad.html` a partir de `dist/index.html` (`seo/render.ts`) con su propio título, descripción, canonical, Open Graph, contenido en `#root` y JSON-LD (`AboutPage`/`WebPage` + `BreadcrumbList`). Así los rastreadores que no ejecutan JavaScript ven contenido real. `vercel.json` los sirve sin `.html` (`cleanUrls`) y sin barra final.
+- **Metadatos**: título, descripción y páginas viven en `seo/meta.ts` (fuente única; la app los actualiza al navegar y un test comprueba que coinciden con `index.html`). Para añadir otra página indexable: añádela a `seo/meta.ts` y `seo/render.ts`, al `sitemap.xml` y a la lista del `vite.config.ts`.
+- **Idioma por defecto**: español, sin autodetección, para que lo que renderiza un buscador (que declara `en-US`) coincida con el HTML estático. La elección ES/EN del usuario se recuerda.
 - **SEO**: `index.html` incluye canonical, Open Graph, Twitter Card, JSON-LD (WebSite, WebApplication y Person), verificación de Google Search Console, `robots.txt` y `sitemap.xml`.
 - **Iconos**: se generan con la misma geometría que el logo (`src/components/Logo.tsx`): `favicon.ico` (16/32/48), `favicon.svg`, PNG, `apple-touch-icon` e iconos de la PWA (incl. *maskable*).
 - **`og-image.png` es en realidad un JPEG** (1248×832, ~200 KB). Se mantiene el nombre, pero `og:image:type` declara `image/jpeg` y `vercel.json` fuerza ese `Content-Type`. Si quieres un PNG real o renombrarla a `.jpg`, actualiza `index.html`, `AboutView.tsx` y `vercel.json`.

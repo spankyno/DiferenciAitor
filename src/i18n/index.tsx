@@ -6,14 +6,6 @@ export type Lang = 'es' | 'en';
 
 const dictionaries: Record<Lang, Record<MessageKey, string>> = { es, en };
 
-function detectLang(): Lang {
-  try {
-    return navigator.language?.toLowerCase().startsWith('en') ? 'en' : 'es';
-  } catch {
-    return 'es';
-  }
-}
-
 export type TFunction = (key: MessageKey, params?: Record<string, string | number>) => string;
 
 interface I18nValue {
@@ -26,7 +18,9 @@ interface I18nValue {
 const I18nContext = createContext<I18nValue | null>(null);
 
 export function I18nProvider({ children }: { children: ReactNode }) {
-  const [lang, setLang] = usePersistentState<Lang>('lang', detectLang(), (raw) =>
+  // Idioma por defecto fijo (español): los buscadores renderizan con navigator.language = en-US y
+  // deben ver lo mismo que el HTML estático. La elección manual ES/EN se recuerda.
+  const [lang, setLang] = usePersistentState<Lang>('lang', 'es', (raw) =>
     raw === 'en' ? 'en' : 'es',
   );
 

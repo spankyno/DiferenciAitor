@@ -12,5 +12,7 @@ window.scrollTo = () => undefined;
 afterEach(() => {
   cleanup();
   localStorage.clear();
-  window.location.hash = '';
+  window.history.replaceState(null, '', '/');
+  document.head.querySelectorAll('[data-test-meta]').forEach((e) => e.remove());
+  document.title = '';
 });

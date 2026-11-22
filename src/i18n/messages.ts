@@ -20,6 +20,10 @@ export const es = {
   'mode.about': 'Acerca de',
   'mode.privacy': 'Política de privacidad',
 
+  // Cabecera de la portada
+  'home.h1': 'Comparar textos, archivos y carpetas online',
+  'home.lead': 'Resalta las diferencias línea a línea, sin subir nada: todo se procesa en tu navegador.',
+
   // Pie de página
   'footer.nav': 'Enlaces del pie de página',
   'footer.about': 'Acerca de',
@@ -254,6 +258,9 @@ export const en: Record<MessageKey, string> = {
   'mode.foldersDesc': 'Compare two directories',
   'mode.about': 'About',
   'mode.privacy': 'Privacy policy',
+
+  'home.h1': 'Compare texts, files and folders online',
+  'home.lead': 'Highlights line-by-line differences without uploading anything: it all runs in your browser.',
 
   'footer.nav': 'Footer links',
   'footer.about': 'About',

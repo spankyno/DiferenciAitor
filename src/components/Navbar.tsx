@@ -1,29 +1,26 @@
 import { Moon, Sun } from 'lucide-react';
+import { AppLink } from './AppLink';
 import { Logo } from './Logo';
 import { useI18n } from '../i18n';
 import { focusRing } from './ui';
 
-export function Navbar({
-  dark,
-  onToggleTheme,
-  onHome,
-}: {
-  dark: boolean;
-  onToggleTheme: () => void;
-  onHome: () => void;
-}) {
+export function Navbar({ dark, onToggleTheme }: { dark: boolean; onToggleTheme: () => void }) {
   const { t, lang, setLang } = useI18n();
   return (
     <header className="sticky top-0 z-30 border-b border-slate-200 dark:border-slate-800 bg-white/85 dark:bg-slate-950/85 backdrop-blur">
       <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
-        <button type="button" onClick={onHome} className={`flex items-center gap-2.5 rounded-lg ${focusRing}`}>
+        <AppLink mode="text" className={`flex items-center gap-2.5 rounded-lg ${focusRing}`}>
           <Logo size={32} />
           <span className="font-extrabold tracking-tight text-slate-900 dark:text-white">
             Diferenci<span className="text-indigo-600 dark:text-indigo-400">AI</span>tor
           </span>
-        </button>
+        </AppLink>
         <div className="flex items-center gap-2">
-          <div role="group" aria-label={t('nav.language')} className="flex bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg">
+          <div
+            role="group"
+            aria-label={t('nav.language')}
+            className="flex bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg"
+          >
             {(['es', 'en'] as const).map((l) => (
               <button
                 key={l}

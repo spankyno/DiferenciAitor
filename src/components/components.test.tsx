@@ -6,6 +6,7 @@ import { I18nProvider } from '../i18n';
 import { DEFAULT_DIFF_OPTIONS, DEFAULT_VIEW_SETTINGS } from '../types';
 import { computeDiff } from '../utils/diffEngine';
 import { DiffViewer } from './DiffViewer';
+import { PAGE_META } from '../../seo/meta';
 
 const renderApp = () =>
   render(
@@ -145,8 +146,8 @@ describe('Pie de página', () => {
 
   it('enlaza internamente a Acerca de y a Privacidad', () => {
     renderApp();
-    expect(screen.getByRole('link', { name: 'Acerca de' })).toHaveAttribute('href', '#about');
-    expect(screen.getByRole('link', { name: 'Privacidad' })).toHaveAttribute('href', '#privacy');
+    expect(screen.getByRole('link', { name: 'Acerca de' })).toHaveAttribute('href', '/acerca-de');
+    expect(screen.getByRole('link', { name: 'Privacidad' })).toHaveAttribute('href', '/privacidad');
   });
 
   it('muestra el texto de copyright exacto', () => {
@@ -304,5 +305,172 @@ describe('DiffViewer', () => {
       renderViewer(lines(300, 150), lines(300));
     });
     expect(screen.getByText(/Similitud/)).toBeInTheDocument();
+  });
+});
+
+/** Simula las etiquetas del <head> de index.html (en los tests no hay HTML cargado). */
+function addHeadTags() {
+  const add = (html: string) => {
+    const t = document.createElement('template');
+    t.innerHTML = html;
+    const el = t.content.firstElementChild!;
+    el.setAttribute('data-test-meta', '');
+    document.head.appendChild(el);
+  };
+  add('<meta name="description" content="">');
+  add('<meta property="og:title" content="">');
+  add('<meta property="og:description" content="">');
+  add('<meta property="og:url" content="">');
+  add('<meta name="twitter:title" content="">');
+  add('<meta name="twitter:description" content="">');
+  add('<link rel="canonical" href="">');
+}
+const head = (sel: string, attr: string) => document.head.querySelector(sel)?.getAttribute(attr);
+
+describe('Rutas reales', () => {
+  it('abre /acerca-de directamente y muestra "Acerca de" con su título', async () => {
+    window.history.replaceState(null, '', '/acerca-de');
+    renderApp();
+    expect(await screen.findByRole('heading', { level: 1, name: 'Acerca de DiferenciAItor' })).toBeInTheDocument();
+    expect(document.title).toBe(PAGE_META.about.title.es);
+  });
+
+  it('abre /privacidad directamente, también con barra final', async () => {
+    window.history.replaceState(null, '', '/privacidad/');
+    renderApp();
+    expect(await screen.findByRole('heading', { level: 1, name: 'Política de Privacidad' })).toBeInTheDocument();
+  });
+
+  it('los enlaces antiguos /#about y /#privacy se convierten en la URL real', async () => {
+    window.history.replaceState(null, '', '/#about');
+    renderApp();
+    expect(await screen.findByRole('heading', { level: 1, name: 'Acerca de DiferenciAItor' })).toBeInTheDocument();
+    await waitFor(() => expect(window.location.pathname).toBe('/acerca-de'));
+    expect(window.location.hash).toBe('');
+  });
+
+  it('un enlace antiguo (#about) que llega con la app ya abierta también se convierte en la URL real', async () => {
+    renderApp();
+    window.history.pushState(null, '', '/#about');
+    window.dispatchEvent(new HashChangeEvent('hashchange'));
+    expect(await screen.findByRole('heading', { level: 1, name: 'Acerca de DiferenciAItor' })).toBeInTheDocument();
+    expect(window.location.pathname).toBe('/acerca-de');
+    expect(window.location.hash).toBe('');
+  });
+
+  it('un clic normal navega sin recargar y actualiza la URL; Atrás vuelve a la portada', async () => {
+    const user = userEvent.setup();
+    renderApp();
+    fireEvent.change(screen.getByLabelText('Texto original (A)'), { target: { value: 'no se pierde' } });
+    await user.click(screen.getByRole('link', { name: 'Acerca de' }));
+    await screen.findByRole('heading', { level: 1, name: 'Acerca de DiferenciAItor' });
+    expect(window.location.pathname).toBe('/acerca-de');
+
+    window.history.back();
+    await waitFor(() => expect(window.location.pathname).toBe('/'));
+    // El estado de la herramienta se conserva porque no hubo recarga.
+    expect(await screen.findByLabelText('Texto original (A)')).toHaveValue('no se pierde');
+  });
+
+  it('el clic en un enlace interno evita la recarga (preventDefault)', () => {
+    renderApp();
+    const notPrevented = fireEvent.click(screen.getByRole('link', { name: 'Privacidad' }));
+    expect(notPrevented).toBe(false);
+    expect(window.location.pathname).toBe('/privacidad');
+  });
+
+  it('la marca de la barra superior es un enlace real a la portada', async () => {
+    window.history.replaceState(null, '', '/acerca-de');
+    renderApp();
+    const brand = screen.getAllByRole('link').find((a) => a.getAttribute('href') === '/')!;
+    expect(brand).toBeDefined();
+    fireEvent.click(brand);
+    expect(await screen.findByLabelText('Texto original (A)')).toBeVisible();
+    expect(window.location.pathname).toBe('/');
+  });
+
+  it('las herramientas siguen usando el hash (#files, #folders)', async () => {
+    const user = userEvent.setup();
+    renderApp();
+    await user.click(screen.getByRole('button', { name: /Archivos/ }));
+    expect(window.location.pathname + window.location.hash).toBe('/#files');
+  });
+});
+
+describe('Metadatos al navegar', () => {
+  it('actualiza título, descripción, canonical y Open Graph en cada página', async () => {
+    addHeadTags();
+    const user = userEvent.setup();
+    renderApp();
+    expect(document.title).toBe(PAGE_META.home.title.es);
+    expect(head('link[rel="canonical"]', 'href')).toBe('https://diferenciaitor.vercel.app/');
+
+    await user.click(screen.getByRole('link', { name: 'Privacidad' }));
+    await screen.findByRole('heading', { level: 1, name: 'Política de Privacidad' });
+    expect(document.title).toBe(PAGE_META.privacy.title.es);
+    expect(head('meta[name="description"]', 'content')).toBe(PAGE_META.privacy.description.es);
+    expect(head('link[rel="canonical"]', 'href')).toBe('https://diferenciaitor.vercel.app/privacidad');
+    expect(head('meta[property="og:url"]', 'content')).toBe('https://diferenciaitor.vercel.app/privacidad');
+    expect(head('meta[property="og:title"]', 'content')).toBe(PAGE_META.privacy.title.es);
+    expect(head('meta[name="twitter:description"]', 'content')).toBe(PAGE_META.privacy.description.es);
+  });
+
+  it('las tres herramientas comparten el título y el canonical de la portada', async () => {
+    addHeadTags();
+    const user = userEvent.setup();
+    renderApp();
+    await user.click(screen.getByRole('button', { name: /Carpetas/ }));
+    expect(document.title).toBe(PAGE_META.home.title.es);
+    expect(head('link[rel="canonical"]', 'href')).toBe('https://diferenciaitor.vercel.app/');
+  });
+
+  it('cambia el título al inglés al cambiar de idioma', async () => {
+    addHeadTags();
+    const user = userEvent.setup();
+    renderApp();
+    await user.click(screen.getByRole('button', { name: 'English' }));
+    expect(document.title).toBe(PAGE_META.home.title.en);
+    expect(head('meta[name="description"]', 'content')).toBe(PAGE_META.home.description.en);
+  });
+});
+
+describe('Encabezados y idioma por defecto', () => {
+  it('la portada tiene un único h1 con la palabra clave, sea cual sea la herramienta', async () => {
+    const user = userEvent.setup();
+    renderApp();
+    const h1 = () => screen.getAllByRole('heading', { level: 1 });
+    expect(h1()).toHaveLength(1);
+    expect(h1()[0]).toHaveTextContent('Comparar textos, archivos y carpetas online');
+    await user.click(screen.getByRole('button', { name: /Archivos/ }));
+    expect(h1()).toHaveLength(1);
+    await user.click(screen.getByRole('button', { name: /Carpetas/ }));
+    expect(h1()).toHaveLength(1);
+  });
+
+  it('"Acerca de" y "Privacidad" también tienen un único h1', async () => {
+    window.history.replaceState(null, '', '/acerca-de');
+    renderApp();
+    await screen.findByRole('heading', { level: 1, name: 'Acerca de DiferenciAItor' });
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
+  });
+
+  it('arranca en español aunque el navegador (o Googlebot) declare inglés', () => {
+    Object.defineProperty(navigator, 'language', { value: 'en-US', configurable: true });
+    try {
+      renderApp();
+      expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Comparar textos, archivos y carpetas online');
+      expect(document.documentElement.lang).toBe('es');
+    } finally {
+      Object.defineProperty(navigator, 'language', { value: 'es-ES', configurable: true });
+    }
+  });
+
+  it('recuerda la elección manual de idioma', async () => {
+    const user = userEvent.setup();
+    const first = renderApp();
+    await user.click(screen.getByRole('button', { name: 'English' }));
+    first.unmount();
+    renderApp();
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Compare texts, files and folders online');
   });
 });

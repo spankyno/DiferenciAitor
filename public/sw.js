@@ -1,9 +1,13 @@
 // Service worker mínimo: permite usar la app sin conexión tras la primera visita.
 // Navegaciones: red primero, caché como respaldo. Recursos estáticos: caché primero.
-const CACHE = 'diferenciaitor-v1';
+const CACHE = 'diferenciaitor-v2';
+const PRECACHE = ['/', '/acerca-de', '/privacidad', '/favicon.svg', '/manifest.webmanifest'];
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE).then((c) => c.addAll(['/', '/favicon.svg', '/manifest.webmanifest'])));
+  // Una por una: si alguna ruta falla, no se invalida toda la instalación.
+  event.waitUntil(
+    caches.open(CACHE).then((cache) => Promise.allSettled(PRECACHE.map((url) => cache.add(url)))),
+  );
   self.skipWaiting();
 });
 
@@ -25,11 +29,14 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       fetch(req)
         .then((res) => {
-          const copy = res.clone();
-          caches.open(CACHE).then((c) => c.put('/', copy));
+          if (res.ok) {
+            const copy = res.clone();
+            caches.open(CACHE).then((c) => c.put(req, copy));
+          }
           return res;
         })
-        .catch(() => caches.match('/')),
+        // Sin conexión: la página pedida si está en caché; si no, la portada (la app enruta por la URL).
+        .catch(() => caches.match(req).then((hit) => hit || caches.match('/'))),
     );
     return;
   }
