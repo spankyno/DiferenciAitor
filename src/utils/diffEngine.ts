@@ -1,30 +1,30 @@
 import * as Diff from 'diff';
-import type {
-  DiffLine,
-  DiffOptions,
-  DiffResult,
-  DiffRow,
-  DiffStats,
-  InlinePart,
-} from '../types';
+import type { DiffLine, DiffOptions, DiffResult, DiffRow, DiffStats, InlinePart } from '../types';
 import { isBlankLine, lineKey, prepareTexts, similarity, splitLines } from './text';
 
 /* -------------------------------------------------------------------------- */
 /*  Operaciones elementales sobre secuencias de enteros                        */
 /* -------------------------------------------------------------------------- */
 
-type Op =
-  | { t: 'eq'; a: number; b: number }
-  | { t: 'del'; a: number }
-  | { t: 'ins'; b: number };
+type Op = { t: 'eq'; a: number; b: number } | { t: 'del'; a: number } | { t: 'ins'; b: number };
 
 interface SeqContext {
   ops: Op[];
   approximate: boolean;
+  /** Instante (performance.now) a partir del cual se deja de buscar la solución exacta. */
+  deadline: number;
 }
 
 /** Tiempo máximo (ms) que se concede a Myers en cada tramo antes de aproximar. */
 const MYERS_TIMEOUT_MS = 1500;
+/**
+ * Presupuesto TOTAL de cálculo por comparación. Los límites por tramo no bastan: una entrada
+ * fabricada con muchos tramos difíciles (o muchos bloques por emparejar) los acumularía hasta
+ * ocupar la CPU durante minutos. Pasado el presupuesto se devuelve un resultado aproximado.
+ */
+export const DEFAULT_BUDGET_MS = 5000;
+/** Máximo para resaltar una sola línea. */
+const INLINE_TIMEOUT_MS = 100;
 const MAX_ANCHOR_DEPTH = 64;
 
 /** Subsecuencia creciente más larga (O(n log n)). Devuelve índices dentro de `values`. */
@@ -148,12 +148,19 @@ function diffRange(
     }
   }
 
-  // Sin anclas: Myers de jsdiff con límite de tiempo.
+  // Sin anclas: Myers de jsdiff, limitado por tramo y por el presupuesto global.
+  const remaining = ctx.deadline - performance.now();
+  if (remaining <= 0) {
+    ctx.approximate = true;
+    emitAll(ctx, aStart, aEnd, bStart, bEnd);
+    emitTail();
+    return;
+  }
   const subA = A.slice(aStart, aEnd);
   const subB = B.slice(bStart, bEnd);
-  const changes = Diff.diffArrays(subA, subB, { timeout: MYERS_TIMEOUT_MS } as never) as
-    | Diff.ArrayChange<number>[]
-    | undefined;
+  const changes = Diff.diffArrays(subA, subB, {
+    timeout: Math.max(1, Math.min(MYERS_TIMEOUT_MS, remaining)),
+  } as never) as Diff.ArrayChange<number>[] | undefined;
 
   if (!changes) {
     ctx.approximate = true;
@@ -176,8 +183,8 @@ function diffRange(
 }
 
 /** Diff de dos secuencias de enteros. Exportado para pruebas. */
-export function diffSequences(A: number[], B: number[]): SeqContext {
-  const ctx: SeqContext = { ops: [], approximate: false };
+export function diffSequences(A: number[], B: number[], deadline = Infinity): SeqContext {
+  const ctx: SeqContext = { ops: [], approximate: false, deadline };
   diffRange(A, B, 0, A.length, 0, B.length, ctx, 0);
   return ctx;
 }
@@ -208,6 +215,7 @@ export function inlineDiff(
   left: string,
   right: string,
   options: DiffOptions,
+  timeoutMs = INLINE_TIMEOUT_MS,
 ): { left: InlinePart[]; right: InlinePart[] } | undefined {
   if (left.length > MAX_INLINE_LENGTH || right.length > MAX_INLINE_LENGTH) return undefined;
   const tl = tokenize(left);
@@ -218,7 +226,9 @@ export function inlineDiff(
   };
   const kl = tl.map(norm);
   const kr = tr.map(norm);
-  const changes = Diff.diffArrays(kl, kr);
+  const changes = Diff.diffArrays(kl, kr, { timeout: Math.max(1, timeoutMs) } as never) as
+    Diff.ArrayChange<string>[] | undefined;
+  if (!changes) return undefined; // demasiado costoso: se omite el resaltado interno
   const lp: InlinePart[] = [];
   const rp: InlinePart[] = [];
   let i = 0;
@@ -256,18 +266,33 @@ interface Pair {
  * similitud, manteniendo el orden. Lo que no se empareja queda como
  * eliminado o añadido puro.
  */
-function pairBlock(D: string[], I: string[]): Pair[] {
+function pairBlock(
+  D: string[],
+  I: string[],
+  budget: { deadline: number; exceeded: boolean },
+): Pair[] {
   const out: Pair[] = [];
-  if (D.length === 0 || I.length === 0) {
-    D.forEach((_, d) => out.push({ d }));
-    I.forEach((_, i) => out.push({ i }));
-    return out;
+  const unpaired = (): Pair[] => {
+    const rest: Pair[] = [];
+    D.forEach((_, d) => rest.push({ d }));
+    I.forEach((_, i) => rest.push({ i }));
+    return rest;
+  };
+  if (D.length === 0 || I.length === 0) return unpaired();
+  // Sin presupuesto: no se empareja (cada línea queda como eliminada o añadida).
+  if (performance.now() >= budget.deadline) {
+    budget.exceeded = true;
+    return unpaired();
   }
 
   if (D.length * I.length > MAX_DP_CELLS) {
     // Bloque enorme: emparejado posicional solo si las líneas se parecen.
     const n = Math.min(D.length, I.length);
     for (let k = 0; k < n; k++) {
+      if (performance.now() >= budget.deadline) {
+        budget.exceeded = true;
+        return unpaired();
+      }
       if (similarity(D[k]!, I[k]!) >= PAIR_THRESHOLD) out.push({ d: k, i: k });
       else {
         out.push({ d: k });
@@ -283,6 +308,10 @@ function pairBlock(D: string[], I: string[]): Pair[] {
   const ni = I.length;
   const sim: number[][] = [];
   for (let d = 0; d < nd; d++) {
+    if (performance.now() >= budget.deadline) {
+      budget.exceeded = true;
+      return unpaired();
+    }
     const row: number[] = new Array(ni);
     for (let i = 0; i < ni; i++) {
       const s = similarity(D[d]!, I[i]!);
@@ -364,7 +393,14 @@ function finishStats(stats: DiffStats): DiffStats {
  * - Las opciones se aplican tanto a la comparación de líneas como al resaltado interno.
  * - Las líneas "modificadas" son pares eliminada/añadida suficientemente parecidos.
  */
-export function computeDiff(textA: string, textB: string, options: DiffOptions): DiffResult {
+export function computeDiff(
+  textA: string,
+  textB: string,
+  options: DiffOptions,
+  budgetMs = DEFAULT_BUDGET_MS,
+): DiffResult {
+  const deadline = performance.now() + budgetMs;
+  const pairing = { deadline, exceeded: false };
   const prepared = prepareTexts(textA, textB, options);
   const linesA = splitLines(prepared.a);
   const linesB = splitLines(prepared.b);
@@ -381,7 +417,7 @@ export function computeDiff(textA: string, textB: string, options: DiffOptions):
   const idxA = keep(linesA);
   const idxB = keep(linesB);
   const { A, B } = internKeys(keysA, keysB, idxA, idxB);
-  const { ops, approximate } = diffSequences(A, B);
+  const { ops, approximate: myersApproximate } = diffSequences(A, B, deadline);
 
   const rows: DiffRow[] = [];
   const stats = emptyStats();
@@ -418,6 +454,7 @@ export function computeDiff(textA: string, textB: string, options: DiffOptions):
     const pairs = pairBlock(
       dels.map((i) => keysA[i]!),
       inss.map((j) => keysB[j]!),
+      pairing,
     );
     for (const p of pairs) {
       if (p.d !== undefined && p.i !== undefined) {
@@ -426,7 +463,12 @@ export function computeDiff(textA: string, textB: string, options: DiffOptions):
         flushBlanks(ia, ib);
         const left = line(linesA, ia);
         const right = line(linesB, ib);
-        const parts = inlineDiff(left.text, right.text, options);
+        // Sin presupuesto se omite el resaltado interno (la línea sigue marcada como modificada).
+        const remaining = deadline - performance.now();
+        const parts =
+          remaining > 0
+            ? inlineDiff(left.text, right.text, options, Math.min(INLINE_TIMEOUT_MS, remaining))
+            : undefined;
         if (parts) {
           left.parts = parts.left;
           right.parts = parts.right;
@@ -473,7 +515,7 @@ export function computeDiff(textA: string, textB: string, options: DiffOptions):
     rows,
     stats,
     identical: stats.added === 0 && stats.removed === 0 && stats.modified === 0,
-    approximate,
+    approximate: myersApproximate || pairing.exceeded,
     jsonNormalized: prepared.jsonNormalized,
   };
 }

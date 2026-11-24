@@ -279,3 +279,87 @@ describe('runPool', () => {
     expect(n).toBeLessThan(100);
   });
 });
+
+
+describe('seguridad: patrones de exclusión sin retroceso exponencial', () => {
+  /** Implementación ANTERIOR (RegExp). Se conserva solo como oráculo de referencia del fuzzing. */
+  function refCompile(patterns: string[]) {
+    const escapeRe = (x: string) => x.replace(/[.+^${}()|[\]\\]/g, '\\$&');
+    const toSource = (glob: string) => {
+      let out = '';
+      for (let i = 0; i < glob.length; i++) {
+        const c = glob[i]!;
+        if (c === '*') {
+          if (glob[i + 1] === '*') {
+            if (glob[i + 2] === '/') { out += '(?:.*/)?'; i += 2; } else { out += '.*'; i += 1; }
+          } else out += '[^/]*';
+        } else if (c === '?') out += '[^/]';
+        else out += escapeRe(c);
+      }
+      return out;
+    };
+    const rules = patterns.map((pattern) => {
+      let p = pattern;
+      const dirOnly = p.endsWith('/');
+      if (dirOnly) p = p.slice(0, -1);
+      const anchored = p.includes('/');
+      if (p.startsWith('/')) p = p.slice(1);
+      return { re: new RegExp(`^${toSource(p)}$`), dirOnly, anchored };
+    });
+    return (path: string, isDir = false) => {
+      const parts = path.split('/').filter(Boolean);
+      for (let i = 0; i < parts.length; i++) {
+        const dir = i === parts.length - 1 ? isDir : true;
+        const prefix = parts.slice(0, i + 1).join('/');
+        for (const r of rules) {
+          if (r.dirOnly && !dir) continue;
+          if (r.re.test(r.anchored ? prefix : parts[i]!)) return true;
+        }
+      }
+      return false;
+    };
+  }
+
+  it('da EXACTAMENTE los mismos resultados que la versión con RegExp (fuzzing)', () => {
+    let seed = 11;
+    const rand = () => (seed = (seed * 1664525 + 1013904223) % 4294967296) / 4294967296;
+    const pick = (chars: string, n: number) => Array.from({ length: n }, () => chars[Math.floor(rand() * chars.length)]).join('');
+    let compared = 0;
+    for (let n = 0; n < 4000; n++) {
+      const pats = Array.from({ length: 1 + Math.floor(rand() * 3) }, () => pick('ab/*?.x', 1 + Math.floor(rand() * 7)));
+      const neu = compileIgnore(pats);
+      const ref = refCompile(pats);
+      for (let k = 0; k < 6; k++) {
+        const path = pick('ab/.x', Math.floor(rand() * 10));
+        for (const isDir of [false, true]) {
+          expect(neu(path, isDir), `patrones=${JSON.stringify(pats)} ruta=${JSON.stringify(path)} dir=${isDir}`).toBe(ref(path, isDir));
+          compared++;
+        }
+      }
+    }
+    expect(compared).toBeGreaterThan(40_000);
+  });
+
+  it('un patrón con muchos comodines ya no congela (antes: 10 comodines = 0,7 s y ×4 por cada uno)', () => {
+    const pat = '*a'.repeat(30) + '*b';
+    const path = 'a'.repeat(200) + 'c';
+    const t0 = performance.now();
+    expect(compileIgnore([pat])(path)).toBe(false);
+    expect(compileIgnore(['**/*a'.repeat(15) + '*b'])(path)).toBe(false);
+    expect(performance.now() - t0).toBeLessThan(200);
+  });
+
+  it('sigue encontrando coincidencias reales con muchos comodines', () => {
+    expect(compileIgnore(['*a*a*a*a*b'])('xaxaxaxaxb')).toBe(true);
+    expect(compileIgnore(['src/**/*.test.ts'])('src/a/b/c/x.test.ts')).toBe(true);
+  });
+
+  it('es rápido con muchas rutas y los patrones habituales', () => {
+    const ign = compileIgnore(parsePatterns('.git/\nnode_modules/\n.DS_Store\n*.log\nbuild/**/*.map'));
+    const t0 = performance.now();
+    let hits = 0;
+    for (let i = 0; i < 100_000; i++) if (ign(`src/mod${i % 50}/sub/archivo${i}.ts`)) hits++;
+    expect(hits).toBe(0);
+    expect(performance.now() - t0).toBeLessThan(2500);
+  });
+});

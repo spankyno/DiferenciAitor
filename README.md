@@ -16,12 +16,12 @@ Comparador de **textos, archivos y carpetas** que funciona 100 % en el navegador
 ```bash
 npm install
 npm run dev        # http://localhost:3000
-npm test           # 155 tests (motor, utilidades, componentes, rutas y SEO/CSP)
+npm test           # 205 tests (motor, utilidades, componentes, rutas, SEO y seguridad)
 npm run lint       # ESLint + tsc (modo estricto)
 npm run build      # genera dist/
 ```
 
-Requiere Node `^20.19` o `>=22.12` (ver `.nvmrc`).
+Requiere Node `^22.12`, `^24` o `>=26` (ver `.nvmrc`; Vitest 5 ya no soporta Node 20).
 
 ## Despliegue en Vercel (plan gratuito)
 
@@ -65,3 +65,33 @@ src/
 - El **patch exportado** es siempre exacto (no aplica las opciones de ignorar), para que se pueda aplicar.
 - Límites: hash hasta 128 MB por archivo; diff de líneas hasta 5 MB por archivo. Por encima, se compara por tamaño/fecha o solo por hash.
 - El contenido de los textos **no se guarda** en el navegador (solo preferencias), por privacidad.
+
+## Seguridad
+
+Es una aplicación estática sin backend propio: la superficie de ataque es el navegador del usuario y la configuración de despliegue.
+
+### Controles que lleva el repositorio
+- **CSP estricta** (`vercel.json`): sin `unsafe-inline` ni `unsafe-eval`, scripts/estilos/workers solo del propio origen, sin `data:`/`blob:`, `form-action 'none'`, `frame-ancestors 'none'`, `upgrade-insecure-requests`. El único origen externo permitido es el del panel de analítica.
+- **Cabeceras**: HSTS, `X-Content-Type-Options`, `X-Frame-Options`, `Cross-Origin-Opener-Policy`, `Referrer-Policy: no-referrer` y `Permissions-Policy` restrictiva.
+- **Sin sumideros de XSS** (`innerHTML`, `eval`, etc.) y **sin peticiones de red** en el código de la app. Un test lo comprueba, así que la promesa de privacidad no se puede romper sin que falle el CI.
+- **Presupuesto de tiempo global** en el motor de diff (5 s): un par de archivos fabricados no puede tener la pestaña calculando minutos; devuelve un resultado aproximado y avisa.
+- **Patrones de exclusión sin retroceso exponencial** (emparejador lineal, verificado por fuzzing contra la implementación anterior con `RegExp`).
+- **Carpetas en solo lectura** (`showDirectoryPicker({ mode: 'read' })`) y el contenido no se guarda en el navegador, solo preferencias.
+- **Informes seguros**: el CSV neutraliza fórmulas (`=`, `+`, `-`, `@`) y el HTML escapa todo el contenido.
+- **Cadena de suministro**: lockfile, sin scripts de instalación, `npm audit` en el CI, Dependabot y permisos mínimos en GitHub Actions. Hay un test que avisa si aparece una dependencia de producción nueva.
+- **Service worker**: solo cachea respuestas correctas del propio origen; `/assets/` (con hash) en caché primero y el resto se revalida.
+- **`/.well-known/security.txt`** para comunicar problemas.
+
+### Verificar tras desplegar (no se puede comprobar desde el código)
+1. **Cabeceras reales**: DevTools → Network → documento → *Response Headers*. Deben estar las de `vercel.json`. Vercel puede añadir o fusionar alguna (p. ej. HSTS).
+2. **Consola sin violaciones de CSP** al usar las tres herramientas y descargar un informe.
+3. **Panel de analítica**: ver abajo.
+
+### Script de analítica (riesgo de terceros)
+El script de seguimiento se ejecuta con los mismos privilegios que la app y podría leer lo que se muestra en pantalla. La privacidad prometida depende de que ese archivo no cambie sin que lo sepas. Para fijarlo:
+1. Descarga `tracker.js` desde tu panel y calcula su hash: `openssl dgst -sha384 -binary tracker.js | openssl base64 -A`.
+2. En `index.html` añade `integrity="sha384-..."` y `crossorigin="anonymous"` a la etiqueta `<script>`.
+3. El Worker debe responder con `Access-Control-Allow-Origin` para tu dominio. Cada vez que modifiques el tracker habrá que actualizar el hash.
+
+### Endurecer el Worker de analítica (fuera de este repositorio)
+La clave `data-key` es pública por diseño (va en el HTML), así que cualquiera puede enviar datos falsos. Conviene validar en el Worker: `Origin`/`Referer` contra la lista de dominios permitidos, CORS solo para `https://diferenciaitor.vercel.app`, tamaño máximo de la petición, límite de peticiones por IP o sesión (Cloudflare Rate Limiting) y clave de solo escritura. Revisa también las reglas de firewall y los límites de gasto de tu plan de Vercel.

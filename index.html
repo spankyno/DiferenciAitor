@@ -112,20 +112,6 @@
       }
     </script>
 
-    <!-- Contenido estático de la portada: lo ven buscadores y usuarios sin JavaScript; React lo sustituye al arrancar. -->
-    <style>
-      html.dark body { background: #020617; color: #e2e8f0; }
-      .ssr { max-width: 48rem; margin: 0 auto; padding: 2.5rem 1rem; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; }
-      .ssr h1 { font-size: 1.875rem; font-weight: 800; line-height: 1.2; margin: 0 0 0.75rem; }
-      .ssr h2 { font-size: 1.15rem; font-weight: 700; margin: 1.75rem 0 0.5rem; }
-      .ssr ul, .ssr ol { padding-left: 1.5rem; }
-      .ssr ul { list-style: disc; }
-      .ssr ol { list-style: decimal; }
-      .ssr nav { margin-top: 1.5rem; }
-      .ssr a { color: #4338ca; }
-      html.dark .ssr a { color: #a5b4fc; }
-    </style>
-
     <!-- Aplica el tema antes de pintar (evita el parpadeo). Archivo propio por la CSP. -->
     <script src="/theme-init.js"></script>
 
@@ -156,7 +142,7 @@
       </main>
     <!--/static--></div>
     <noscript>
-      <p style="font-family: system-ui, sans-serif; padding: 2rem; text-align: center">
+      <p class="ssr">
         DiferenciAItor necesita JavaScript para comparar textos, archivos y carpetas en tu navegador.
       </p>
     </noscript>

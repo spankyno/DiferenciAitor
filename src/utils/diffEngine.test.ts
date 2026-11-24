@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  DEFAULT_BUDGET_MS,
   areEquivalent,
   computeDiff,
   differOnlyInLineEndings,
@@ -235,5 +236,85 @@ describe('rendimiento', () => {
     const t0 = Date.now();
     computeDiff(a, b, opts());
     expect(Date.now() - t0).toBeLessThan(8000);
+  });
+});
+
+describe('seguridad: presupuesto de tiempo global (entradas fabricadas)', () => {
+  /** k bloques repetitivos y totalmente distintos entre A y B, separados por líneas ancla únicas. */
+  const myersBomb = (k: number, p: string) =>
+    Array.from({ length: k }, (_, j) =>
+      [`anchor${j}`, ...Array.from({ length: 3000 }, (_, i) => `${p}${i % 3}`)].join('\n'),
+    ).join('\n');
+
+  /** Bloques de 200x200 líneas largas y parecidas: el emparejado por similitud es caro. */
+  const pairBomb = (k: number, seed: number) => {
+    let x = seed;
+    const r = () => (x = (x * 1664525 + 1013904223) % 4294967296) / 4294967296;
+    return Array.from({ length: k }, (_, j) =>
+      [`anchor${j}`, ...Array.from({ length: 200 }, () => Array.from({ length: 400 }, () => 'abcd'[Math.floor(r() * 4)]).join(''))].join('\n'),
+    ).join('\n');
+  };
+
+  it('el presupuesto por defecto es de unos segundos, no de minutos', () => {
+    expect(DEFAULT_BUDGET_MS).toBeGreaterThanOrEqual(1000);
+    expect(DEFAULT_BUDGET_MS).toBeLessThanOrEqual(10_000);
+  });
+
+  it('Myers: 8 bloques difíciles ya no suman ~10 s; se corta y se marca como aproximado', () => {
+    const a = myersBomb(8, 'a');
+    const b = myersBomb(8, 'b');
+    const t0 = performance.now();
+    const r = computeDiff(a, b, opts(), 300);
+    const elapsed = performance.now() - t0;
+    expect(elapsed).toBeLessThan(2500); // antes de la corrección: ~10 500 ms
+    expect(r.approximate).toBe(true);
+    // Aunque sea aproximado, el resultado sigue siendo un diff VÁLIDO.
+    const { a: ra, b: rb } = rebuild(r);
+    expect(ra).toEqual(splitLines(a));
+    expect(rb).toEqual(splitLines(b));
+  });
+
+  it('emparejado: 8 bloques de 200x200 líneas ya no suman ~16 s', () => {
+    const a = pairBomb(8, 1);
+    const b = pairBomb(8, 2);
+    const t0 = performance.now();
+    const r = computeDiff(a, b, opts(), 300);
+    const elapsed = performance.now() - t0;
+    expect(elapsed).toBeLessThan(3000); // antes de la corrección: ~16 600 ms
+    expect(r.approximate).toBe(true);
+    const { a: ra, b: rb } = rebuild(r);
+    expect(ra).toEqual(splitLines(a));
+    expect(rb).toEqual(splitLines(b));
+  });
+
+  it('con el presupuesto por defecto, una entrada que antes tardaba >20 s termina acotada', () => {
+    const a = myersBomb(16, 'a');
+    const b = myersBomb(16, 'b');
+    const t0 = performance.now();
+    const r = computeDiff(a, b, opts());
+    expect(performance.now() - t0).toBeLessThan(DEFAULT_BUDGET_MS + 3000);
+    expect(r.approximate).toBe(true);
+  }, 30_000);
+
+  it('presupuesto agotado desde el principio: el resultado sigue reconstruyendo A y B (fuzzing)', () => {
+    let seed = 5;
+    const rand = () => (seed = (seed * 1664525 + 1013904223) % 4294967296) / 4294967296;
+    const vocab = ['', 'a', 'b', 'foo', 'foo bar', 'X', '}', '{'];
+    const text = (n: number) => Array.from({ length: n }, () => vocab[Math.floor(rand() * vocab.length)]!).join('\n');
+    for (let n = 0; n < 150; n++) {
+      const ta = text(Math.floor(rand() * 25));
+      const tb = text(Math.floor(rand() * 25));
+      const r = computeDiff(ta, tb, opts(), 0);
+      const { a, b } = rebuild(r);
+      expect(a).toEqual(splitLines(ta));
+      expect(b).toEqual(splitLines(tb));
+    }
+  });
+
+  it('las comparaciones normales no se ven afectadas: no se marcan como aproximadas', () => {
+    const r = computeDiff('uno\ndos\ntres', 'uno\nDOS\ntres\ncuatro', opts());
+    expect(r.approximate).toBe(false);
+    const big = Array.from({ length: 50_000 }, (_, i) => `linea ${i}`).join('\n');
+    expect(computeDiff(big, big.replace('linea 25000', 'cambio'), opts()).approximate).toBe(false);
   });
 });

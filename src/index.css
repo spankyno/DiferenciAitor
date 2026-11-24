@@ -45,3 +45,49 @@
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(100, 116, 139, 0.75);
 }
+
+/*
+ * Contenido estático de cada página (lo ven buscadores y usuarios sin JavaScript; React lo sustituye).
+ * Vive aquí y no en un <style> inline para poder usar una CSP estricta (style-src 'self').
+ */
+html.dark body {
+  background: #020617;
+  color: #e2e8f0;
+}
+.ssr {
+  max-width: 48rem;
+  margin: 0 auto;
+  padding: 2.5rem 1rem;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.6;
+}
+.ssr h1 {
+  font-size: 1.875rem;
+  font-weight: 800;
+  line-height: 1.2;
+  margin: 0 0 0.75rem;
+}
+.ssr h2 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin: 1.75rem 0 0.5rem;
+}
+.ssr ul,
+.ssr ol {
+  padding-left: 1.5rem;
+}
+.ssr ul {
+  list-style: disc;
+}
+.ssr ol {
+  list-style: decimal;
+}
+.ssr nav {
+  margin-top: 1.5rem;
+}
+.ssr a {
+  color: #4338ca;
+}
+html.dark .ssr a {
+  color: #a5b4fc;
+}
